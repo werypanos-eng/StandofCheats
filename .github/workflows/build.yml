@@ -1,43 +1,16 @@
-name: Build Standoff Mod
-on: [push, workflow_dispatch]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Unzip project
-        run: |
-          find . -maxdepth 1 -name "*.zip" -exec unzip {} \;
-          ls -la
-
-      - name: Setup Android NDK
-        uses: nttld/setup-ndk@v1
-        id: setup-ndk
-        with:
-          ndk-version: r25b
-          add-to-path: true
-
-      - name: Build with ndk-build
-        run: |
-          # Ищем папку jni, но игнорируем папку backups
-          JNI_DIR=$(find . -type d -name "jni" | grep -v "backups" | head -n 1)
-          
-          if [ -z "$JNI_DIR" ]; then
-            echo "Ошибка: Папка jni не найдена!"
-            exit 1
-          fi
-          
-          cd "$JNI_DIR"
-          echo "Сборка в папке: $(pwd)"
-          
-          $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk APP_ABI=arm64-v8a
-        env:
-          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-
-      - name: Upload Library
-        uses: actions/upload-artifact@v4
-        with:
-          name: Built-Library
-          path: '**/libs/arm64-v8a/*.so'
+- name: Build with ndk-build
+  run: |
+    JNI_DIR=$(find . -type d -name "jni" | grep -v "backups" | head -n 1)
+    
+    if [ -z "$JNI_DIR" ]; then
+      echo "Ошибка: Папка jni не найдена!"
+      exit 1
+    fi
+    
+    cd "$JNI_DIR"
+    echo "Сборка в папке: $(pwd)"
+    
+    # Принудительно добавляем библиотеку C++ через флаги
+    $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk APP_ABI=arm64-v8a APP_LDFLAGS="-lc++_shared"
+  env:
+    ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
