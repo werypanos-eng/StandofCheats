@@ -21,7 +21,15 @@ jobs:
 
       - name: Build with ndk-build
         run: |
-          if [ -d "jni" ]; then cd jni; fi
+          # Ищем файл Android.mk и переходим в его папку
+          MK_PATH=$(find . -name "Android.mk" -type f | head -n 1)
+          if [ -z "$MK_PATH" ]; then
+            echo "Android.mk не найден!"
+            exit 1
+          fi
+          cd $(dirname "$MK_PATH")
+          echo "Сборка в папке: $(pwd)"
+          
           $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk APP_ABI=arm64-v8a
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
