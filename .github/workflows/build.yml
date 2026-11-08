@@ -21,15 +21,18 @@ jobs:
 
       - name: Build with ndk-build
         run: |
-          # Ищем файл Android.mk и переходим в его папку
-          MK_PATH=$(find . -name "Android.mk" -type f | head -n 1)
-          if [ -z "$MK_PATH" ]; then
-            echo "Android.mk не найден!"
+          # Ищем именно папку jni, игнорируя папку backups
+          JNI_DIR=$(find . -type d -name "jni" | grep -v "backups" | head -n 1)
+          
+          if [ -z "$JNI_DIR" ]; then
+            echo "Ошибка: Папка jni не найдена!"
             exit 1
           fi
-          cd $(dirname "$MK_PATH")
+          
+          cd "$JNI_DIR"
           echo "Сборка в папке: $(pwd)"
           
+          # Запускаем сборку только под arm64-v8a
           $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=Android.mk APP_ABI=arm64-v8a
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
